@@ -3,6 +3,7 @@ import { useId, useState } from 'react';
 import { INK, NOTE_COLORS, SCOPES } from '../lib/config';
 import { friendlyError } from '../lib/errors';
 import { relativeTime } from '../lib/time';
+import { useI18n } from '../lib/i18n';
 import type { Note } from '../types';
 import { Sheet } from './Sheet';
 
@@ -16,6 +17,7 @@ interface Props {
 
 export function NoteCard({ note, onClose, onShare, onReport, onDelete }: Props) {
   const titleId = useId();
+  const { t } = useI18n();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function NoteCard({ note, onClose, onShare, onReport, onDelete }: Props) 
                   <span className="truncate">{note.place_name}</span>
                 </>
               ) : (
-                <span>Note</span>
+                <span>{t('noPlace')}</span>
               )}
             </h2>
             <p className="text-xs text-[#6B665C]">
@@ -56,7 +58,7 @@ export function NoteCard({ note, onClose, onShare, onReport, onDelete }: Props) 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close note"
+            aria-label={t('close')}
             className="grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-black/5"
           >
             <X size={22} aria-hidden="true" />
@@ -79,7 +81,7 @@ export function NoteCard({ note, onClose, onShare, onReport, onDelete }: Props) 
 
         {confirmDelete ? (
           <div className="flex flex-col gap-2 rounded-xl bg-[#F6F0DE] p-3">
-            <p className="text-sm font-medium">Delete this note? This can’t be undone.</p>
+            <p className="text-sm font-medium">{t('deleteQuestion')}</p>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -95,7 +97,7 @@ export function NoteCard({ note, onClose, onShare, onReport, onDelete }: Props) 
                 onClick={doDelete}
                 disabled={deleting}
               >
-                {deleting ? 'Deleting…' : 'Delete'}
+                {deleting ? t('deleting') : t('delete')}
               </button>
             </div>
           </div>
