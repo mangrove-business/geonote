@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import { friendlyError } from '../lib/errors';
 import type { ReportReason } from '../types';
+import { useI18n } from '../lib/i18n';
 import { Sheet } from './Sheet';
 
 interface Props {
@@ -8,14 +9,15 @@ interface Props {
   onSubmit: (reason: ReportReason) => Promise<void>;
 }
 
-const REASONS: { value: ReportReason; label: string; hint: string }[] = [
-  { value: 'spam', label: 'Spam', hint: 'Ads, scams, or repeated junk' },
-  { value: 'abuse', label: 'Abuse', hint: 'Harassment, hate, threats, or personal info' },
-  { value: 'other', label: 'Something else', hint: 'Anything else that doesn’t belong' },
+const REASONS: { value: ReportReason; labelKey: string; hintKey: string }[] = [
+  { value: 'spam', labelKey: 'spam', hintKey: 'spamHint' },
+  { value: 'abuse', labelKey: 'abuse', hintKey: 'abuseHint' },
+  { value: 'other', labelKey: 'other', hintKey: 'otherHint' },
 ];
 
 export function ReportSheet({ onClose, onSubmit }: Props) {
   const titleId = useId();
+  const { t } = useI18n();
   const [busy, setBusy] = useState<ReportReason | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,9 +36,9 @@ export function ReportSheet({ onClose, onSubmit }: Props) {
     <Sheet variant="modal" labelledBy={titleId} onClose={onClose}>
       <div className="flex flex-col gap-3 p-4">
         <h2 id={titleId} className="text-lg font-semibold">
-          Report this note
+          {t('reportTitle')}
         </h2>
-        <p className="text-sm text-[#6B665C]">Why does it not belong on the map?</p>
+        <p className="text-sm text-[#6B665C]">{t('reportWhy')}</p>
         <div className="flex flex-col gap-2">
           {REASONS.map((r) => (
             <button
@@ -47,9 +49,9 @@ export function ReportSheet({ onClose, onSubmit }: Props) {
               className="min-h-11 rounded-xl border border-[#E0D8C3] bg-white px-3 py-2 text-left hover:bg-[#F6F0DE] disabled:opacity-60"
             >
               <span className="block text-sm font-semibold">
-                {busy === r.value ? 'Sending…' : r.label}
+                {busy === r.value ? t('sending') : t(r.labelKey)}
               </span>
-              <span className="block text-xs text-[#6B665C]">{r.hint}</span>
+              <span className="block text-xs text-[#6B665C]">{t(r.hintKey)}</span>
             </button>
           ))}
         </div>
