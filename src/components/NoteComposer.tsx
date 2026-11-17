@@ -6,7 +6,6 @@ import {
   INK,
   NOTE_COLORS,
   NOTE_MAX_LENGTH,
-  SCOPES,
   SCOPE_ORDER,
 } from '../lib/config';
 import { defaultScopeForZoom, formatCoords } from '../lib/geo';
