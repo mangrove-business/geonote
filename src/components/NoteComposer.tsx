@@ -10,6 +10,7 @@ import {
   SCOPE_ORDER,
 } from '../lib/config';
 import { defaultScopeForZoom, formatCoords } from '../lib/geo';
+import { useI18n } from '../lib/i18n';
 import { friendlyError } from '../lib/errors';
 import type { NoteColor, NoteDraft, NoteScope, PickedPoint, SessionStatus } from '../types';
 import { Sheet } from './Sheet';
@@ -25,6 +26,7 @@ interface Props {
 
 export function NoteComposer({ point, sessionStatus, onRetrySession, onClose, onSubmit }: Props) {
   const titleId = useId();
+  const { t } = useI18n();
   const [body, setBody] = useState('');
   const [color, setColor] = useState<NoteColor>('yellow');
   const [scope, setScope] = useState<NoteScope>(() => defaultScopeForZoom(point.zoom));
@@ -70,16 +72,16 @@ export function NoteComposer({ point, sessionStatus, onRetrySession, onClose, on
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 id={titleId} className="text-lg font-semibold leading-tight">
-              Leave a note
+              {t('leaveNote')}
             </h2>
             <p className="truncate text-sm text-[#6B665C]">
-              {point.placeName ? `on ${point.placeName}` : `at ${formatCoords(point.lat, point.lng)}`}
+              {point.placeName ? `on ${point.placeName}` : `${t('at')} ${formatCoords(point.lat, point.lng)}`}
             </p>
           </div>
           <button
             type="button"
             onClick={requestClose}
-            aria-label="Close composer"
+            aria-label={t('close')}
             className="grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-black/5"
           >
             <X size={22} aria-hidden="true" />
@@ -104,8 +106,8 @@ export function NoteComposer({ point, sessionStatus, onRetrySession, onClose, on
         )}
 
         <fieldset>
-          <legend className="mb-1.5 text-sm font-medium">What is this note about?</legend>
-          <div role="radiogroup" aria-label="Note scope" className="grid grid-cols-3 gap-2">
+          <legend className="mb-1.5 text-sm font-medium">{t('noteAbout')}</legend>
+          <div role="radiogroup" aria-label={t('scope')} className="grid grid-cols-3 gap-2">
             {SCOPE_ORDER.map((s) => (
               <button
                 key={s}
@@ -119,16 +121,16 @@ export function NoteComposer({ point, sessionStatus, onRetrySession, onClose, on
                     : 'border-[#E0D8C3] bg-white hover:bg-[#F6F0DE]'
                 }`}
               >
-                <span className="block text-sm font-semibold">{SCOPES[s].label}</span>
-                <span className="block text-[11px] leading-tight opacity-80">{SCOPES[s].hint}</span>
+                <span className="block text-sm font-semibold">{t(s)}</span>
+                <span className="block text-[11px] leading-tight opacity-80">{t(`${s}Hint`)}</span>
               </button>
             ))}
           </div>
         </fieldset>
 
         <fieldset>
-          <legend className="mb-1.5 text-sm font-medium">Color</legend>
-          <div role="radiogroup" aria-label="Note color" className="flex gap-2">
+          <legend className="mb-1.5 text-sm font-medium">{t('color')}</legend>
+          <div role="radiogroup" aria-label={t('color')} className="flex gap-2">
             {COLOR_ORDER.map((c) => (
               <button
                 key={c}
@@ -157,7 +159,7 @@ export function NoteComposer({ point, sessionStatus, onRetrySession, onClose, on
             maxLength={NOTE_MAX_LENGTH}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Write something for this place…"
+            placeholder={t('placeholder')}
             style={{ backgroundColor: NOTE_COLORS[color], color: INK }}
             className="w-full resize-none rounded-xl border border-[#2B2A28]/40 p-3 text-base leading-snug placeholder:text-[#2B2A28]/55"
           />
@@ -180,7 +182,7 @@ export function NoteComposer({ point, sessionStatus, onRetrySession, onClose, on
 
         {confirming ? (
           <div className="flex flex-col gap-2 rounded-xl bg-[#F6F0DE] p-3">
-            <p className="text-sm font-medium">Discard this note?</p>
+            <p className="text-sm font-medium">{t('discardQuestion')}</p>
             <div className="flex gap-2">
               <button type="button" className="btn btn-ghost flex-1" onClick={() => setConfirming(false)}>
                 Keep writing
@@ -196,7 +198,7 @@ export function NoteComposer({ point, sessionStatus, onRetrySession, onClose, on
               Cancel
             </button>
             <button type="submit" className="btn btn-primary flex-1" disabled={!canPost}>
-              {submitting ? 'Posting…' : 'Post note'}
+              {submitting ? t('posting') : t('postNote')}
             </button>
           </div>
         )}
