@@ -35,6 +35,7 @@ export interface MapHandle {
   locate: () => void;
   /** On narrow screens, pan so a point isn't hidden behind the bottom sheet. */
   ensureVisible: (lng: number, lat: number) => void;
+  toggleSatellite: () => void;
 }
 
 export interface MapHighlight {
@@ -164,6 +165,7 @@ export function MapView({
   const highlightRef = useRef<MapHighlight | null>(highlight);
   const userMarkerRef = useRef<Marker | null>(null);
   const locateRef = useRef<() => void>(() => {});
+  const satelliteRef = useRef(false);
 
   // Keep the latest callbacks in a ref so map handlers never go stale
   // and the map is never re-created because a prop changed.
@@ -209,6 +211,12 @@ export function MapView({
         else map.flyTo({ center: [lng, lat], zoom, essential: true });
       },
       locate: () => locateRef.current(),
+      toggleSatellite: () => {
+        const map = mapRef.current;
+        if (!map || !map.getLayer('satellite')) return;
+        satelliteRef.current = !satelliteRef.current;
+        map.setLayoutProperty('satellite', 'visibility', satelliteRef.current ? 'visible' : 'none');
+      },
       ensureVisible: (lng, lat) => {
         const map = mapRef.current;
         const el = containerRef.current;
@@ -270,6 +278,20 @@ export function MapView({
     map.on('load', () => {
       registerSprites(map);
 
+      map.addSource('satellite', {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        maxzoom: 19,
+        attribution: 'Tiles © Esri',
+      });
+      map.addLayer({
+        id: 'satellite',
+        type: 'raster',
+        source: 'satellite',
+        layout: { visibility: 'none' },
+        paint: { 'raster-opacity': 1 },
+      });
       map.addSource('notes', {
         type: 'geojson',
         data: EMPTY,
