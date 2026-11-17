@@ -17,6 +17,7 @@ import { useOnline } from './hooks/useOnline';
 import { useRealtimeNotes } from './hooks/useRealtimeNotes';
 import { copyText } from './lib/clipboard';
 import { INTRO_STORAGE_KEY, NOTES_CAP, SCOPES } from './lib/config';
+import { useI18n } from './lib/i18n';
 import type { Note, NoteDraft, PickedPoint, ReportReason, ViewState } from './types';
 
 function introAlreadyDismissed(): boolean {
@@ -29,10 +30,12 @@ function introAlreadyDismissed(): boolean {
 
 export default function App() {
   const queryClient = useQueryClient();
+  const { t } = useI18n();
   const mapRef = useRef<MapHandle>(null);
 
   const [view, setView] = useState<ViewState | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [satellite, setSatellite] = useState(false);
   const [selected, setSelected] = useState<Note | null>(null);
   const [composerPoint, setComposerPoint] = useState<PickedPoint | null>(null);
   const [reportFor, setReportFor] = useState<Note | null>(null);
@@ -79,7 +82,7 @@ export default function App() {
   const wasError = useRef(false);
   useEffect(() => {
     if (notesQuery.isError && !wasError.current && online) {
-      push('Notes are unavailable right now.', {
+      push(t('unavailable'), {
         label: 'Retry',
         onClick: () => void notesQuery.refetch(),
       });
@@ -95,7 +98,7 @@ export default function App() {
         setSelected(note);
         mapRef.current?.flyTo(note.lng, note.lat, SCOPES[note.scope].shareZoom);
       },
-      onMissing: () => push('This note was removed or hidden.'),
+      onMissing: () => push(t('removed')),
     },
     session.status !== 'pending',
   );
@@ -131,13 +134,13 @@ export default function App() {
     setComposerPoint(null);
     setSelected(note);
     mapRef.current?.flyTo(note.lng, note.lat, SCOPES[note.scope].shareZoom);
-    push('Note posted');
+    push(t('posted'));
   };
 
   const deleteNote = async (note: Note) => {
     await remove.mutateAsync(note.id);
     setSelected(null);
-    push('Note deleted');
+    push(t('deleted'));
   };
 
   const reportNote = async (reason: ReportReason) => {
@@ -149,10 +152,22 @@ export default function App() {
     void queryClient.invalidateQueries({ queryKey: ['notes'] });
   };
 
+  const randomNote = useCallback(() => {
+    const notes = notesQuery.notes ?? [];
+    if (!notes.length) {
+      push(t('randomEmpty'));
+      return;
+    }
+    const note = notes[Math.floor(Math.random() * notes.length)];
+    setComposerPoint(null);
+    setSelected(note);
+    mapRef.current?.flyTo(note.lng, note.lat, SCOPES[note.scope].shareZoom);
+  }, [notesQuery.notes, push, t]);
+
   const shareNote = async (note: Note) => {
     const url = noteShareUrl(note.id);
     const ok = await copyText(url);
-    push(ok ? 'Link copied' : `Couldn’t copy automatically. Link: ${url}`);
+    push(ok ? t('copied') : `Couldn’t copy automatically. Link: ${url}`);
   };
 
   // ---- derived UI state ----
@@ -185,7 +200,7 @@ export default function App() {
         onMapClick={handleMapClick}
         onNoteClick={handleNoteClick}
         onLoaded={() => setMapLoaded(true)}
-        onLoadError={() => push('The map couldn’t load. Check your connection and reload.')}
+        onLoadError={() => push(t('mapError'))}
         onLocateError={(message) => push(message)}
       />
 
@@ -195,7 +210,7 @@ export default function App() {
         </div>
       )}
 
-      <TopBar readOnlyReason={readOnlyReason} offline={!online} onAbout={() => setAboutOpen(true)} />
+      <TopBar readOnlyReason={readOnlyReason} offline={!online} satellite={satellite} onSatellite={() => { mapRef.current?.toggleSatellite(); setSatellite((v) => !v); }} onRandom={randomNote} onAbout={() => setAboutOpen(true)} />
 
       <div
         className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-2 px-3 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] ${
@@ -203,11 +218,11 @@ export default function App() {
         }`}
       >
         {introVisible && !composerPoint && <IntroHint onDismiss={dismissIntro} />}
-        {loadingPill && <div className="pill" role="status">Loading notes…</div>}
-        {showEmpty && <div className="pill">No notes here yet — leave the first one</div>}
+        {loadingPill && <div className="pill" role="status">{t('loading')}</div>}
+        {showEmpty && <div className="pill">{t('noNotes')}</div>}
         {notesQuery.capped && (
           <div className="pill">
-            Showing {NOTES_CAP.toLocaleString()} notes here — zoom in for more
+            {t('zoomNotes', { count: NOTES_CAP.toLocaleString() })}
           </div>
         )}
       </div>
